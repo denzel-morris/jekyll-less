@@ -39,6 +39,15 @@ of the gems specified in your Gemfile.
     require "bundler/setup"
     Bundler.require(:default)
 
+Configuration
+-------------
+You can customize where Less `@import` statements load files from with `less_dir` (which defaults to `<source>/_less`).
+
+If you want to load imported files from another directory, add the following to `_config.yml`:
+
+    less:
+        less_dir: _my_custom_less_dir/
+
 Credit
 ------
 This gem was originally based on this [gist](https://gist.github.com/760265) by
