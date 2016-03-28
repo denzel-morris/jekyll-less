@@ -6,6 +6,7 @@ module Jekyll
 
     class LessCssFile < Jekyll::StaticFile
       attr_accessor :compress
+      attr_writer :import_path
 
       # Obtain destination path.
       #   +dest+ is the String path to the destination dir
@@ -15,6 +16,10 @@ module Jekyll
         File.join(dest, @dir, @name.sub(/less$/, 'css'))
       end
 
+      def import_path
+        File.expand_path(@import_path, @base)
+      end
+      
       # Convert the less file into a css file.
       #   +dest+ is the String path to the destination dir
       #
@@ -28,7 +33,7 @@ module Jekyll
         FileUtils.mkdir_p(File.dirname(dest_path))
         begin
           content = File.read(path)
-          content = ::Less::Parser.new({:paths => [File.dirname(path)]}).parse(content).to_css :compress => compress
+          content = ::Less::Parser.new({:paths => [import_path]}).parse(content).to_css :compress => compress
           File.open(dest_path, 'w') do |f|
             f.write(content)
           end
@@ -46,7 +51,8 @@ module Jekyll
 
       # Initialize options from site config.
       def initialize(config = {})
-        @options = config["less"] ||= {"compress" => true}
+        @options = defaults
+        @options.merge!(config["less"]) if config["less"]
       end
 
       # Jekyll will have already added the *.less files as Jekyll::StaticFile
@@ -61,9 +67,19 @@ module Jekyll
 
             less_file = LessCssFile.new(site, site.source, destination, name)
             less_file.compress = @options["compress"]
+            less_file.import_path = @options["less_dir"]
             site.static_files << less_file
           end
         end
+      end
+
+      private
+
+      def defaults
+        {
+          "compress" => true,
+          "less_dir" => "_less"
+        }
       end
     end
 
