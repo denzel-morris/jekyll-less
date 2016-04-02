@@ -3,7 +3,7 @@ require 'less'
 
 module Jekyll
   module Less
-    module CommonMethods
+    class LessCssFile < Jekyll::StaticFile
       attr_accessor :compress
       attr_writer :import_path
 
@@ -45,12 +45,39 @@ module Jekyll
 
     end
 
-    class LessCssFile < Jekyll::StaticFile
-      include CommonMethods
-    end
-
     class LessCssPage < Jekyll::Page
-      include CommonMethods
+      attr_accessor :compress
+      attr_writer :import_path
+
+      # Obtain destination path.
+      #   +dest+ is the String path to the destination dir
+      #
+      # Returns destination file path.
+      def destination(dest)
+        File.join(dest, @dir, @name.sub(/less$/, 'css'))
+      end
+
+      def import_path
+        File.expand_path(@import_path, @base)
+      end
+      
+      # Convert the less file into a css file.
+      #   +dest+ is the String path to the destination dir
+      #
+      # Returns false if the file was not modified since last time (no-op).
+      def write(dest)
+        dest_path = destination(dest)
+
+        FileUtils.mkdir_p(File.dirname(dest_path))
+        begin
+          content = ::Less::Parser.new({:paths => [import_path]}).parse(output).to_css :compress => compress
+          File.open(dest_path, 'w') do |f|
+            f.write(content)
+          end
+        rescue => e
+          STDERR.puts "Less Exception: #{e.message}"
+        end
+      end
     end
     
     class LessCssGenerator < Jekyll::Generator
