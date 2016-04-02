@@ -3,8 +3,7 @@ require 'less'
 
 module Jekyll
   module Less
-
-    class LessCssFile < Jekyll::StaticFile
+    module CommonMethods
       attr_accessor :compress
 
       # Obtain destination path.
@@ -41,6 +40,14 @@ module Jekyll
 
     end
 
+    class LessCssFile < Jekyll::StaticFile
+      include CommonMethods
+    end
+
+    class LessCssPage < Jekyll::Page
+      include CommonMethods
+    end
+    
     class LessCssGenerator < Jekyll::Generator
       safe true
 
@@ -62,6 +69,19 @@ module Jekyll
             less_file = LessCssFile.new(site, site.source, destination, name)
             less_file.compress = @options["compress"]
             site.static_files << less_file
+          end
+        end
+
+        site.pages.clone.each do |page|
+          if page.kind_of?(Jekyll::Page) && page.path =~ /\.less$/
+            site.pages.delete(page)
+            name = File.basename(page.path)
+            destination = File.dirname(page.path).sub(site.source, '')
+
+            less_page = LessCssPage.new(site, site.source, destination, name)
+            less_page.compress = @options["compress"]
+            less_page.import_path = @options["less_dir"]
+            site.pages << less_page
           end
         end
       end
